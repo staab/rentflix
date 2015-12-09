@@ -4,9 +4,12 @@ The Rentflix Project is an effort to provide a web interface exposing the media 
 
 # Installation
 
+Install [Leiningen](https://github.com/technomancy/leiningen)
+
 ```
 git clone git@github.com:staab/rentflix.git
 cd rentflix
+lein deps
 ```
 
 # Implementation
