@@ -25,3 +25,9 @@ The backend with expose a [GraphQL](https://facebook.github.io/react/blog/2015/0
 # Frontend
 
 We'll use Clojurescript with [Om](https://github.com/omcljs/om) [React](https://facebook.github.io/react/), and maybe [Flux](https://facebook.github.io/flux/) if we need it.
+
+# Running
+
+```
+lein ring server
+```

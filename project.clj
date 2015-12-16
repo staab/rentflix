@@ -8,4 +8,6 @@
                  [ring/ring-jetty-adapter "1.4.0"]]
   :main ^:skip-aot rentflix.core
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :plugins [[lein-ring "0.9.7"]]
+  :profiles {:uberjar {:aot :all}}
+  :ring {:handler rentflix.core/handler})
