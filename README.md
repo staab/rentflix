@@ -20,7 +20,7 @@ The primary reason we chose the tech stack outlined below is for our own persona
 
 We'll be using Clojure with [Ring](https://github.com/ring-clojure/ring) for our http server with [Compojure](https://github.com/weavejester/compojure) for routing. We'll use [Datomic](http://docs.datomic.com/) for our database. 
 
-The backend with expose a [GraphQL](https://facebook.github.io/react/blog/2015/05/01/graphql-introduction.html) API for use by a web frontend.
+The backend will expose a [GraphQL](https://facebook.github.io/react/blog/2015/05/01/graphql-introduction.html) API for use by a web frontend.
 
 # Frontend
 
@@ -29,6 +29,6 @@ We'll use Clojurescript with [Om](https://github.com/omcljs/om) [React](https://
 # Running
 
 ```
-lein ring server
+lein ring server-headless
 ```
 
