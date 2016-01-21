@@ -10,6 +10,7 @@ Install [Leiningen](https://github.com/technomancy/leiningen)
 git clone git@github.com:staab/rentflix.git
 cd rentflix
 lein deps
+lein git-deps
 ```
 
 # Implementation

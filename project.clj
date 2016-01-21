@@ -3,6 +3,7 @@
   :url "https://github.com/staab/rentflix"
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
+  :git-dependencies [["https://github.com/runexec/Moov.git"]]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
@@ -12,8 +13,10 @@
   :main ^:skip-aot rentflix.server/-main
   :target-path "target/%s"
   :plugins [[environ/environ.lein "0.2.1"]
-            [lein-ring "0.9.7"]]
+            [lein-ring "0.9.7"]
+            [lein-git-deps "0.0.1-SNAPSHOT"]]
   :hooks [environ.leiningen.hooks]
   :uberjar-name "rentflix-standalone.jar"
   :profiles {:uberjar {:aot :all}}
+  :source-paths ["src" ".lein-git-deps/Moov/src"]
   :ring {:handler rentflix.server/api-handler})
