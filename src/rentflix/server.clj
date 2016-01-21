@@ -1,16 +1,16 @@
 (ns rentflix.server
-  (:require [compojure.core :refer [defroutes GET PUT POST DELETE ANY]]
-            [compojure.handler :refer [site]]
-            [compojure.route :as route]
-            [ring.middleware.stacktrace :as trace]
-            [ring.middleware.params :as p]
-            [ring.adapter.jetty :as jetty]
-            [environ.core :refer [env]]))
+  (:use (compojure [handler :only (api)]
+                   [route :only (not-found)]
+                   [core :only (GET POST ANY defroutes)])))
 
-(defroutes api
-  (GET "/" []
-       {:status 200
-        :headers {"Content-Type" "text/plain"}
-        :body "Hello World"})
-  (ANY "*" []
-       (route/not-found "Page Not Found")))
+(defn api-root [request] "This is the root")
+(defn api-list [request] "This is the list endpoint")
+(defn api-detail [request] "This is the detail endpoint")
+
+(defroutes api-routes
+  (GET "/" [request] (api-root request))
+  (GET "/:model" [request] (api-list request))
+  (GET "/:model/:id" [request] (api-detail request))
+  (ANY "*" [] (not-found "Page Not Found")))
+
+(defonce api-handler (api api-routes))

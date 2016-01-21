@@ -16,4 +16,4 @@
   :hooks [environ.leiningen.hooks]
   :uberjar-name "rentflix-standalone.jar"
   :profiles {:uberjar {:aot :all}}
-  :ring {:handler rentflix.server/api})
+  :ring {:handler rentflix.server/api-handler})
