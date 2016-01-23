@@ -6,14 +6,13 @@
 ; This is our db uri.
 (defonce uri "datomic:mem://rentflix")
 
-; Make sure the database exists
-(dat/create-database uri)
-
 ; Connect to the db
-(def conn (dat/connect uri))
+(defonce conn (dat/connect uri))
 
-; submit schema transaction
-(dat/transact conn (read-string (slurp "resources/rentflix.schema.edn")))
+; Make sure the database exists. If it doesn't, create it, and fill it with
+; our schema
+(if (dat/create-database uri)
+    (dat/transact conn (read-string (slurp "resources/rentflix.schema.edn"))))
 
 ;; Public functions
 
