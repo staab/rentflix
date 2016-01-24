@@ -1,0 +1,9 @@
+[
+{:db/id #db/id[:db.part/user -1000001] :title/name "Pulp Fiction" :title/tmdbid "1"}
+{:db/id #db/id[:db.part/user -1000002] :title/name "Martian Chronicles" :title/tmdbid "2"}
+{:db/id #db/id[:db.part/user -1000003] :media/title #db/id[:db.part/user -1000001]}
+{:db/id #db/id[:db.part/user -1000004] :media/title #db/id[:db.part/user -1000001]}
+{:db/id #db/id[:db.part/user -1000005] :media/title #db/id[:db.part/user -1000002]}
+{:db/id #db/id[:db.part/user -1000006] :media/title #db/id[:db.part/user -1000002]}
+{:db/id #db/id[:db.part/user -1000007] :media/title #db/id[:db.part/user -1000002]}
+]

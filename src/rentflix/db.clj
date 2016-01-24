@@ -1,23 +1,24 @@
 (ns rentflix.db
     (:require [datomic.api :as dat]))
 
-;; Setup
-
 ; This is our db uri.
-(defonce uri "datomic:mem://rentflix")
+(defonce db-uri "datomic:mem://rentflix")
 
-; Make sure the database exists
-(dat/create-database uri)
+; This is our schema
+(defonce db-schema (read-string (slurp "resources/db-schema.edn")))
 
-; Connect to the db
-(def conn (dat/connect uri))
+; This is our test data
+(defonce db-test-data (read-string (slurp "resources/db-test-data.edn")))
 
-; submit schema transaction
-(dat/transact conn (read-string (slurp "resources/rentflix.schema.edn")))
-
-;; Public functions
+; This creates the db and puts the schema in there, then adds a connection
+(defonce conn
+    (do
+        (if (dat/create-database db-uri)
+            (dat/transact (dat/connect db-uri) db-schema))
+        (dat/connect db-uri)))
 
 ; Shortcut method for querying with arguments
 (defn query
     [query & args]
-    (apply dat/q (concat [(dat/db conn) args])))
+    (apply dat/q (concat [query (dat/db conn)] args)))
+
