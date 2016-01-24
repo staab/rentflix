@@ -1,0 +1,58 @@
+[
+  ;; Title
+
+  {:db/id #db/id[:db.part/db]
+  :db/ident :title/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/fulltext true
+  :db/doc "A title's name"
+  :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/tmdbid
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/doc "A title's TMDB id"
+   :db.install/_attribute :db.part/db}
+
+  ;; Media
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :media/title
+   :db/valueType :db.type/ref
+   :db/cardinality :db.cardinality/one
+   :db/doc "The title this media record represents"
+   :db.install/_attribute :db.part/db}
+
+  ;; User
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :user/email
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/doc "A user's email address"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :user/passhash
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/doc "A user's password hash"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :user/salt
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/doc "A user's password salt"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :user/media
+   :db/valueType :db.type/ref
+   :db/cardinality :db.cardinality/many
+   :db/doc "Media a user has checked out"
+   :db.install/_attribute :db.part/db}
+
+  ]
