@@ -1,16 +1,32 @@
 (ns rentflix.server
   (:use (compojure [handler :only (api)]
                    [route :only (not-found)]
-                   [core :only (GET POST ANY defroutes)])))
+                   [core :only (GET POST ANY defroutes)])
+        (clojure [pprint :only (pprint)])
+        (rentflix [db :only (get-db)]))
+  (:require [datomic.api :as dat]))
 
-(defn api-root [request] "This is the root")
-(defn api-list [request] "This is the list endpoint")
-(defn api-detail [request] "This is the detail endpoint")
+; Specific route handlers
+
+(defn api-root
+  [] "This is the root")
+
+(defn api-list
+  [model]
+  (str "this is the list endpoint for " model))
+
+(defn api-detail
+  [model id]
+  (str (dat/pull (get-db) '[*] (read-string id))))
+
+; Defroutes macro to define top level macro
+; http://stackoverflow.com/a/3490479/1467342
+; https://github.com/weavejester/compojure/wiki/Routes-In-Detail
 
 (defroutes api-routes
-  (GET "/" [request] (api-root request))
-  (GET "/:model" [request] (api-list request))
-  (GET "/:model/:id" [request] (api-detail request))
+  (GET "/" [] (api-root))
+  (GET "/:model" [model] (api-list model))
+  (GET "/:model/:id" [model id] (api-detail model id))
   (ANY "*" [] (not-found "Page Not Found")))
 
 (defonce api-handler (api api-routes))
