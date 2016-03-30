@@ -1,4 +1,16 @@
 [
+  ;; Types
+
+  {:db/id #db/id[:db.part/db]
+  :db/ident :type
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "An entity's type, defined by entities whose ident begins with :type"
+  :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db] :db/ident :type/title}
+  {:db/id #db/id[:db.part/db] :db/ident :type/media}
+
   ;; Title
 
   {:db/id #db/id[:db.part/db]
@@ -23,36 +35,6 @@
    :db/valueType :db.type/ref
    :db/cardinality :db.cardinality/one
    :db/doc "The title this media record represents"
-   :db.install/_attribute :db.part/db}
-
-  ;; User
-
-  {:db/id #db/id[:db.part/db]
-   :db/ident :user/email
-   :db/valueType :db.type/string
-   :db/cardinality :db.cardinality/one
-   :db/doc "A user's email address"
-   :db.install/_attribute :db.part/db}
-
-  {:db/id #db/id[:db.part/db]
-   :db/ident :user/passhash
-   :db/valueType :db.type/string
-   :db/cardinality :db.cardinality/one
-   :db/doc "A user's password hash"
-   :db.install/_attribute :db.part/db}
-
-  {:db/id #db/id[:db.part/db]
-   :db/ident :user/salt
-   :db/valueType :db.type/string
-   :db/cardinality :db.cardinality/one
-   :db/doc "A user's password salt"
-   :db.install/_attribute :db.part/db}
-
-  {:db/id #db/id[:db.part/db]
-   :db/ident :user/media
-   :db/valueType :db.type/ref
-   :db/cardinality :db.cardinality/many
-   :db/doc "Media a user has checked out"
    :db.install/_attribute :db.part/db}
 
   ]

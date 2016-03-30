@@ -6,7 +6,8 @@
   :git-dependencies [["https://github.com/runexec/Moov.git"]]
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :creds :gpg}}
-  :dependencies [[org.clojure/clojure "1.7.0"]
+  :dependencies [[argo "0.1.1"]
+                 [org.clojure/clojure "1.7.0"]
                  [com.datomic/datomic-free "0.9.5344" :exclusions [joda-time]]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-jetty-adapter "1.4.0"]
