@@ -1,5 +1,10 @@
 (ns rentflix.util)
 
+(defn in?
+  "true if coll contains el (http://stackoverflow.com/a/3249777/1467342)"
+  [coll el]
+  (some #(= el %) coll))
+
 (defn map-keys
   "Alters keys according to given function"
   [f item]
