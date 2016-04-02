@@ -1,5 +1,8 @@
 (ns rentflix.import
-  (:require [rentflix.util :refer [in?]]))
+  (:require [rentflix.util :refer [in?]]
+            [rentflix.conf :refer [tmdb-api-key]]
+            [clj-http.client :as client]
+            [clojure.data.json :as json]))
 
 (defn read-lines
   "Reads n-lines of given filename"
@@ -48,12 +51,38 @@
      :shelf-id (read-string (clojure.string/trim (subs line 40 60)))
      :num-copies (read-string (clojure.string/trim (subs line 60)))}))
 
+(defn search-tmdb
+  [url, title]
+  ; Avoid getting throttled
+  (Thread/sleep 1000)
+  (let [results (client/get
+                  (str "https://api.themoviedb.org/3/" url)
+                  {:query-params {"api_key" tmdb-api-key "query" title}
+                   :headers {:accept :json}})]
+    (map #(select-keys % ["id", "title"])
+         (get (json/read-str (:body results)) "results"))))
+
+(defn get-tmdb-id
+  [title]
+  (let [results (concat
+                  (search-tmdb "search/movie" title)
+                  (search-tmdb "search/tv" title))]
+    (clojure.pprint/pprint (count results))
+    (clojure.pprint/pprint results)
+    (get (first results) "id")))
+
+(defn add-tmdb-id
+  [item]
+  (assoc item :tmdb-id (get-tmdb-id (:title item))))
+
 (defn import-movlist
   []
   (->>
-    (read-lines "resources/movlist.raw" 0 100)
+    (read-lines "resources/movlist.raw" 0 20)
     (map trim-line)
     (filter #(not (trash-line %)))
-    (map line->item)))
+    (map line->item)
+    (map add-tmdb-id)))
 
 ; (clojure.pprint/pprint (do (use 'rentflix.import :reload) (import-movlist)))
+; TODO: get release date to compare and select

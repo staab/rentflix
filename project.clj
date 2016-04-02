@@ -7,6 +7,8 @@
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :creds :gpg}}
   :dependencies [[argo "0.1.1"]
+                 [clj-http "2.0.1"]
+                 [org.clojure/data.json "0.2.6"]
                  [org.clojure/clojure "1.7.0"]
                  [com.datomic/datomic-free "0.9.5344" :exclusions [joda-time]]
                  [ring/ring-core "1.4.0"]
