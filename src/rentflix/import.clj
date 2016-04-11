@@ -1,5 +1,5 @@
 (ns rentflix.import
-  (:require [rentflix.util :refer [in?]]
+  (:require [rentflix.util :refer [in? has-keys?]]
             [rentflix.conf :refer [tmdb-api-key]]
             [clj-http.client :as client]
             [clojure.data.json :as json]
@@ -63,15 +63,29 @@
 (defn line->item
   [line]
   (let [raw-title (s/trim (subs line 0 40))
+        special-dvd-re #"-SPECI?A?L? ?E?D?I?T?I?O?N? ?D?V?D?$"
         dvd-re #"-DV?D?$"
-        blu-re #"-BL?U?R?A?Y?$"]
+        blu-re #"-BL?U?R?A?Y?$"
+        is-3d-re #"\(3D\)"
+        ultimate-ed #"-UT?LT?I?M?A?T?E? ED\.?"
+        year-re #"-?\(?\d{4}\)?$"
+        sped-ed #"\(SPED ED\)"
+        xxx #"^XXX:"]
     {:title (->
               raw-title
+              (s/replace special-dvd-re "")
               (s/replace dvd-re "")
-              (s/replace blu-re ""))
+              (s/replace blu-re "")
+              (s/replace is-3d-re "")
+              (s/replace ultimate-ed "")
+              (s/replace year-re "")
+              (s/replace sped-ed "")
+              (s/replace xxx ""))
+     :raw-title raw-title
      :format (or
                (if (re-find dvd-re raw-title) :dvd)
                (if (re-find blu-re raw-title) :bluray))
+     :is-3d (boolean (re-find is-3d-re raw-title))
      :shelf-id (read-string (s/trim (subs line 40 60)))
      :num-copies (read-string (s/trim (subs line 60)))}))
 
@@ -84,9 +98,11 @@
                   {:query-params {"api_key" tmdb-api-key "query" title}
                    :headers {:accept :json}})
         results (get (json/read-str (:body res)) "results")]
-    (map #(select-keys % ["id", "title" "release_date"]) results)))
+    (->> results
+      (map #(select-keys % ["id", "title" "release_date"]))
+      (filter #(has-keys? % ["id", "title" "release_date"])))))
 
-(defn get-tmdb-id
+(defn get-tmdb-matches
   [item]
   (let [title (:title item)
         year (get id-to-year (:shelf-id item))
@@ -96,32 +112,37 @@
         ; Filter down results to ones with close-ish release dates.
         ; TMDB and HH have conflicting release dates, but they're usually
         ; within a year
-        timely (->>
-                 results
-                 (filter
-                   (fn
-                     [r]
-                     (let [r-year (try
-                                    (subs (get r "release_date") 0 4)
-                                    (catch Exception e "0"))]
-                       (< (Math/abs (- year (parse-int r-year))) 2))))
-                 ) ; TODO: order among results with identical titles by year
-        ; Try to get a timely one unless we filtered them all out
-        result (if (= 0 (count timely)) (first results) (first timely))]
-    (get (first results) "id")))
+        timely (if year
+                 (->>
+                   results
+                   (filter
+                     (fn
+                       [r]
+                       (let [r-year (try
+                                      (subs (get r "release_date") 0 4)
+                                      (catch Exception e "0"))]
+                         (< (Math/abs (- year (parse-int r-year))) 2)))))
+                 results)
+        matches (if (= 0 (count timely)) results timely)]
+    (println
+      (str "-- Got " (count matches) " matches for " (:raw-title item) ":"))
+    (clojure.pprint/pprint matches)
+    ; Try to get timely ones unless we filtered them all out
+    (map #(get % "id") matches)))
 
-(defn add-tmdb-id
+(defn add-tmdb-matches
   [item]
-  (assoc item :tmdb-id (get-tmdb-id item)))
+  (let [matches (get-tmdb-matches item)]
+    (merge item {:id (first matches) :matches matches})))
 
 (defn import-movlist
   []
   (->>
-    (read-lines "resources/movlist.raw" 0 200)
+    (read-lines "resources/movlist.raw" 283 4000)
     (map trim-line)
     (filter #(not (trash-line %)))
     (map line->item)
-    (map add-tmdb-id)))
+    (map add-tmdb-matches)))
 
 ; (clojure.pprint/pprint (do (use 'rentflix.import :reload) (import-movlist)))
-; TODO: get release date to compare and select
+; TODO: Insert into the database

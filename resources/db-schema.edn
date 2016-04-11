@@ -22,10 +22,46 @@
   :db.install/_attribute :db.part/db}
 
   {:db/id #db/id[:db.part/db]
+  :db/ident :title/rawname
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/fulltext true
+  :db/doc "A title's originally entered name"
+  :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/shelfid
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/doc "A title's Howard Huges shelf id"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
    :db/ident :title/tmdbid
    :db/valueType :db.type/string
    :db/cardinality :db.cardinality/one
    :db/doc "A title's TMDB id"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/format
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/doc "A title's format"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/is3d
+   :db/valueType :db.type/boolean
+   :db/cardinality :db.cardinality/one
+   :db/doc "Whether a title is in 3d"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/matches
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/many
+   :db/doc "A title's possible tmdb matches (given ambiguity of import)"
    :db.install/_attribute :db.part/db}
 
   ;; Media
