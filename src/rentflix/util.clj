@@ -5,6 +5,11 @@
   [coll el]
   (some #(= el %) coll))
 
+(defn map-values
+  "Alters values according to given function"
+  [f item]
+  (into {} (for [[k v] item] [k (f v)])))
+
 (defn map-keys
   "Alters keys according to given function"
   [f item]
@@ -12,3 +17,6 @@
 
 (defn has-keys? [m keys]
   (apply = (map count [keys (select-keys m keys)])))
+
+(defn boolean? [x]
+  (or (true? x) (false? x)))

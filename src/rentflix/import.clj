@@ -1,9 +1,11 @@
 (ns rentflix.import
-  (:require [rentflix.util :refer [in? has-keys?]]
-            [rentflix.conf :refer [tmdb-api-key]]
-            [clj-http.client :as client]
+  (:require [clj-http.client :as client]
             [clojure.data.json :as json]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [datomic.api :as d]
+            [rentflix.conf :refer [tmdb-api-key]]
+            [rentflix.db :as db]
+            [rentflix.util :refer [in? has-keys? map-values]]))
 
 (defn read-lines
   "Reads n-lines of given filename"
@@ -31,7 +33,7 @@
    "3D BLURAY"
    "Continued on next page..."])
 
-(defn trash-line
+(defn trash-line?
   [line]
   (or
     (in? trash-values line)
@@ -46,7 +48,7 @@
   (->>
     (read-lines "resources/movlist-with-date.raw")
     (map trim-line)
-    (filter #(not (trash-line %)))
+    (filter (complement trash-line?))
     (map (fn
            [line]
            (let [shelf-id (subs line 40 56)
@@ -83,11 +85,15 @@
               (s/replace xxx ""))
      :raw-title raw-title
      :format (or
-               (if (re-find dvd-re raw-title) :dvd)
-               (if (re-find blu-re raw-title) :bluray))
+               (if (re-find dvd-re raw-title) "dvd")
+               (if (re-find blu-re raw-title) "bluray"))
      :is-3d (boolean (re-find is-3d-re raw-title))
      :shelf-id (read-string (s/trim (subs line 40 60)))
      :num-copies (read-string (s/trim (subs line 60)))}))
+
+(defn item-imported?
+  [item]
+  (not (empty? (db/find-eids :title/shelfid (:shelf-id item) 1 0))))
 
 (defn search-tmdb
   [url, title]
@@ -133,16 +139,61 @@
 (defn add-tmdb-matches
   [item]
   (let [matches (get-tmdb-matches item)]
-    (merge item {:id (first matches) :matches matches})))
+    (merge item {:tmdb-id (first matches) :matches matches})))
+
+(defn item->title-txn
+  [item]
+  (->>
+    {:title/name (:title item)
+     :title/rawname (:raw-title item)
+     :title/shelfid (:shelf-id item)
+     :title/tmdbid (:tmdb-id item)
+     :title/format (:format item)
+     :title/is3d (:is-3d item)
+     :title/matches (:matches item)}
+    ; Remove nil values
+    (filter (fn [[k v]] v))
+    ; Turn it back into a map
+    ; (into {})
+    ; Add the temp id
+    (concat [[:db/id (:tempid item)]])
+    (into {})))
+
+(defn save-to-db
+  [items]
+  (let [tempid-items (map #(assoc % :tempid (d/tempid :db.part/user)) items)
+        title-txns (reduce #(conj %1 (item->title-txn %2)) [] tempid-items)
+        title-txn-result @(d/transact (db/get-conn) title-txns)
+        media-txns (apply
+                     concat
+                     (map
+                       (fn
+                         [item]
+                         (for [i (range (:num-copies item))]
+                           {:db/id (d/tempid :db.part/user)
+                            :media/title
+                            (d/resolve-tempid
+                              (d/db (db/get-conn))
+                              (:tempids title-txn-result)
+                              (:tempid item))}))
+                       tempid-items))
+        media-txn-result @(d/transact (db/get-conn) media-txns)]
+    items))
+
+
+
+:media/title
 
 (defn import-movlist
   []
   (->>
-    (read-lines "resources/movlist.raw" 283 4000)
+    (read-lines "resources/movlist.raw" 15 100)
     (map trim-line)
-    (filter #(not (trash-line %)))
+    (filter (complement trash-line?))
     (map line->item)
-    (map add-tmdb-matches)))
+    (filter (complement item-imported?))
+    (map add-tmdb-matches)
+    (save-to-db)))
 
 ; (clojure.pprint/pprint (do (use 'rentflix.import :reload) (import-movlist)))
 ; TODO: Insert into the database

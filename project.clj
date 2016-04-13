@@ -8,6 +8,8 @@
                                    :creds :gpg}}
   :dependencies [[argo "0.1.1"]
                  [clj-http "2.0.1"]
+                 [environ "1.0.2"]
+                 [io.rkn/conformity "0.4.0"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/clojure "1.7.0"]
                  [com.datomic/datomic-free "0.9.5344" :exclusions [joda-time]]
@@ -22,6 +24,8 @@
             [lein-git-deps "0.0.1-SNAPSHOT"]]
   :hooks [environ.leiningen.hooks]
   :uberjar-name "rentflix-standalone.jar"
-  :profiles {:uberjar {:aot :all}}
+  :profiles {:uberjar {:aot :all}
+             :dev {:env {:datomic-uri "datomic:free://localhost:4334/rentflix-dev"}}
+             :test {:env {:datomic-uri "datomic:mem://rentflix-test"}}}
   :source-paths ["src" ".lein-git-deps/Moov/src"]
   :ring {:handler rentflix.server/api-handler :auto-refresh? true})

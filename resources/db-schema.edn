@@ -31,14 +31,14 @@
 
   {:db/id #db/id[:db.part/db]
    :db/ident :title/shelfid
-   :db/valueType :db.type/string
+   :db/valueType :db.type/long
    :db/cardinality :db.cardinality/one
    :db/doc "A title's Howard Huges shelf id"
    :db.install/_attribute :db.part/db}
 
   {:db/id #db/id[:db.part/db]
    :db/ident :title/tmdbid
-   :db/valueType :db.type/string
+   :db/valueType :db.type/long
    :db/cardinality :db.cardinality/one
    :db/doc "A title's TMDB id"
    :db.install/_attribute :db.part/db}
@@ -59,7 +59,7 @@
 
   {:db/id #db/id[:db.part/db]
    :db/ident :title/matches
-   :db/valueType :db.type/string
+   :db/valueType :db.type/long
    :db/cardinality :db.cardinality/many
    :db/doc "A title's possible tmdb matches (given ambiguity of import)"
    :db.install/_attribute :db.part/db}
@@ -73,4 +73,4 @@
    :db/doc "The title this media record represents"
    :db.install/_attribute :db.part/db}
 
-  ]
+]

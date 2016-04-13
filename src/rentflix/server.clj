@@ -8,19 +8,6 @@
 
 (def base-url "/api/v1/model")
 
-; Utils
-
-(defn find-by-type
-  [type limit offset]
-  (->> (db/find-eids :type type limit offset)
-     (map db/eid->entity)
-     (map db/trim-entity-keys)))
-
-(defn get-by-id
-  ([eid type]
-   (let [entity (db/eid->entity eid)]
-    (if (:type entity) entity nil))))
-
 ; Resource functions
 
 (defn resource-find
@@ -28,13 +15,13 @@
   [type req]
   (let [limit (get-in req [:page :limit])
         offset (get-in req [:page :offset])]
-    {:data (find-by-type type limit offset)}))
+    {:data (db/find-by-type type limit offset)}))
 
 (defn resource-get
   "Get a single resource given the request object"
   [type req]
   (let [id (Long/parseLong (get-in req [:params :id]))]
-    {:data (get-by-id id type)}))
+    {:data (db/get-by-id id type)}))
 
 ; Resources
 
