@@ -153,8 +153,6 @@
      :title/matches (:matches item)}
     ; Remove nil values
     (filter (fn [[k v]] v))
-    ; Turn it back into a map
-    ; (into {})
     ; Add the temp id
     (concat [[:db/id (:tempid item)]])
     (into {})))
@@ -180,20 +178,23 @@
         media-txn-result @(d/transact (db/get-conn) media-txns)]
     items))
 
-
-
-:media/title
-
-(defn import-movlist
-  []
+(defn import-movies
+  [items]
   (->>
-    (read-lines "resources/movlist.raw" 15 100)
+    items
     (map trim-line)
     (filter (complement trash-line?))
     (map line->item)
+    (filter #(:shelf-id %))
     (filter (complement item-imported?))
     (map add-tmdb-matches)
     (save-to-db)))
+
+(defn import-movlist
+  []
+  (map
+    import-movies
+    (partition 10 (read-lines "resources/movlist.raw"))))
 
 ; (clojure.pprint/pprint (do (use 'rentflix.import :reload) (import-movlist)))
 ; TODO: Insert into the database
