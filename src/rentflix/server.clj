@@ -1,12 +1,16 @@
 (ns rentflix.server
   (:require [argo.core :as argo]
-            [compojure.core :refer [GET defroutes]]
+            [clojure.data.json :as json]
+            [clojure.walk :refer [keywordize-keys]]
+            [compojure.core :refer [GET POST defroutes]]
             [compojure.handler :refer [api]]
             [compojure.route :refer [not-found]]
             [datomic.api :as d]
             [rentflix.db :as db]))
 
-(def base-url "/api/v1/model")
+(def base-url "/api/v1")
+(def model-url (str base-url "/model"))
+(def query-url (str base-url "/query"))
 
 ; Resource functions
 
@@ -28,13 +32,25 @@
 (argo/defresource title {:find (partial resource-find :type/title)
                          :get (partial resource-get :type/title)})
 
-(argo/defapi v1 {:resources [title] :base-url base-url})
+(argo/defapi v1-model {:resources [title] :base-url model-url})
+
+(defn v1-query
+  "Execute a user-defined query sent via json in the form:
+    {
+        \"query\": \"[:find ... :in ... :where ...]\",
+        \"params\": [\"param1\"]
+    }
+  "
+  [req]
+  (let [data (keywordize-keys (json/read-str (slurp (:body req))))]
+    {:body (json/write-str (d/q (:query data) (db/get-db)))}))
 
 ; Routes
 
 (defroutes api-routes
-  (GET base-url [] "This is the api root")
-  (GET (str base-url "*") req (v1 req))
+  (GET model-url [] "This is the api root")
+  (GET (str model-url "*") req (v1-model req))
+  (POST query-url req (v1-query req))
   (not-found "Page not found"))
 
 ; Middleware
