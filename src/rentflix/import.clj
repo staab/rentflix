@@ -23,7 +23,7 @@
 
 (defn parse-int
   [value]
-  (try (read-string (s/trim value)) (catch Exception e nil)))
+  (try (. Integer parseInt (s/trim value)) (catch Exception e nil)))
 
 (def trash-values
   [""
@@ -88,7 +88,7 @@
                (if (re-find dvd-re raw-title) "dvd")
                (if (re-find blu-re raw-title) "bluray"))
      :is-3d (boolean (re-find is-3d-re raw-title))
-     :shelf-id (read-string (s/trim (subs line 40 60)))
+     :shelf-id (parse-int (subs line 40 60))
      :num-copies (read-string (s/trim (subs line 60)))}))
 
 (defn item-imported?
@@ -144,7 +144,8 @@
 (defn item->title-txn
   [item]
   (->>
-    {:title/name (:title item)
+    {:type :type/title
+     :title/name (:title item)
      :title/rawname (:raw-title item)
      :title/shelfid (:shelf-id item)
      :title/tmdbid (:tmdb-id item)
