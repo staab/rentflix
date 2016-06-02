@@ -50,3 +50,25 @@ You can also run a repl with `lein repl`. You can load and reload namespaces wit
 - [API reference](http://docs.datomic.com/clojure/index.html#datomic.api/delete-database)
 - [Tutorial](http://docs.datomic.com/tutorial.html#making-a-database)
 - [Day of Datomic](https://github.com/Datomic/day-of-datomic)
+
+# Domain
+
+http://docs.themoviedb.apiary.io/#reference/movies/movieidsimilar/get
+
+Search on:
+    - Title
+    - Year
+    - Genres
+    - Tagline
+    - Overview
+    - Keywords
+
+Filter on:
+    - Adult
+    - Year
+    - Genres
+
+Get by TMDB endpoint:
+    - Popular
+    - Top Rated
+    - Similar to other

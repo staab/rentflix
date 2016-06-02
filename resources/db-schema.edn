@@ -25,7 +25,6 @@
   :db/ident :title/rawname
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
-  :db/fulltext true
   :db/doc "A title's originally entered name"
   :db.install/_attribute :db.part/db}
 
@@ -44,6 +43,13 @@
    :db.install/_attribute :db.part/db}
 
   {:db/id #db/id[:db.part/db]
+   :db/ident :title/tmdbtype
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/doc "A title's TMDB type"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
    :db/ident :title/format
    :db/valueType :db.type/string
    :db/cardinality :db.cardinality/one
@@ -58,10 +64,49 @@
    :db.install/_attribute :db.part/db}
 
   {:db/id #db/id[:db.part/db]
-   :db/ident :title/matches
-   :db/valueType :db.type/long
+   :db/ident :title/date
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/doc "A title's release date"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/tagline
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/fulltext true
+   :db/doc "A title's tagline"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/overview
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/one
+   :db/fulltext true
+   :db/doc "A title's overview"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/keywords
+   :db/valueType :db.type/string
    :db/cardinality :db.cardinality/many
-   :db/doc "A title's possible tmdb matches (given ambiguity of import)"
+   :db/fulltext true
+   :db/doc "A title's keywords"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/genres
+   :db/valueType :db.type/string
+   :db/cardinality :db.cardinality/many
+   :db/fulltext true
+   :db/doc "A title's genres"
+   :db.install/_attribute :db.part/db}
+
+  {:db/id #db/id[:db.part/db]
+   :db/ident :title/adult
+   :db/valueType :db.type/boolean
+   :db/cardinality :db.cardinality/one
+   :db/doc "Whether a title is adult"
    :db.install/_attribute :db.part/db}
 
   ;; Media

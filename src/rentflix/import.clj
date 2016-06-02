@@ -95,51 +95,66 @@
   [item]
   (not (empty? (db/find-eids :title/shelfid (:shelf-id item) 1 0))))
 
-(defn search-tmdb
-  [url, title]
-  ; Avoid getting throttled
-  (Thread/sleep 1000)
-  (let [res (client/get
-                  (str "https://api.themoviedb.org/3/" url)
-                  {:query-params {"api_key" tmdb-api-key "query" title}
-                   :headers {:accept :json}})
-        results (get (json/read-str (:body res)) "results")]
-    (->> results
-      (map #(select-keys % ["id", "title" "release_date"]))
-      (filter #(has-keys? % ["id", "title" "release_date"])))))
+(defn q-tmdb
+  ([url params]
+   ; Avoid getting throttled
+   (Thread/sleep 1000)
+   (let [res (client/get
+                   (str "https://api.themoviedb.org/3/" url)
+                   {:query-params (merge params {"api_key" tmdb-api-key})
+                    :headers {:accept :json}})]
+     (get (json/read-str (:body res)) "results")))
+  ([url] (q-tmdb url {})))
 
-(defn get-tmdb-matches
-  [item]
+(defn search-tmdb
+  [item type]
   (let [title (:title item)
         year (get id-to-year (:shelf-id item))
-        results (concat
-                  (search-tmdb "search/movie" title)
-                  (search-tmdb "search/tv" title))
-        ; Filter down results to ones with close-ish release dates.
-        ; TMDB and HH have conflicting release dates, but they're usually
-        ; within a year
-        timely (if year
-                 (->>
-                   results
-                   (filter
-                     (fn
-                       [r]
-                       (let [r-year (try
-                                      (subs (get r "release_date") 0 4)
-                                      (catch Exception e "0"))]
-                         (< (Math/abs (- year (parse-int r-year))) 2)))))
-                 results)
-        matches (if (= 0 (count timely)) results timely)]
-    (println
-      (str "-- Got " (count matches) " matches for " (:raw-title item) ":"))
-    (clojure.pprint/pprint matches)
-    ; Try to get timely ones unless we filtered them all out
-    (map #(get % "id") matches)))
+        results (q-tmdb (str "search/" type) {"query" title})]
+    (filter #(has-keys? % ["id", "title" "release_date"]) results)))
 
-(defn add-tmdb-matches
+(defn add-tmdb-movie-data
   [item]
-  (let [matches (get-tmdb-matches item)]
-    (merge item {:tmdb-id (first matches) :matches matches})))
+  (let [url (str "movie/" (get "id" item))
+        movie-data (q-tmdb url)
+        year-data (get "results" (q-tmdb (str url "/release_dates")))
+        keyword-data (get "keywords" (q-tmdb (str url "/keywords")))
+        release-dates (map
+                        #(get "release_date" (first (get "release_dates" %)))
+                        year-data)]
+    {:tmdb-type "movie"
+     :tmdb-id (get "id" item)
+     :years (map #(parse-int (subs % 0 4)) release-dates)
+     :genres (map #(get "name" %) (get "genres" movie-data))
+     :tagline (get "tagline" movie-data)
+     :overview (get "overview" movie-data)
+     :keywords (map #(get "name" %) keyword-data)}))
+
+(defn add-tmdb-tv-data
+  [item]
+  (let [url (str "tv/" (get "id" item))
+        tv (q-tmdb url)]
+    {:tmdb-type "tv"
+     :tmdb-id (get "id" item)}))
+
+(defn find-tmdb-match
+  [item]
+  (let [movies (map add-tmdb-movie-data (search-tmdb item "movie"))
+        tv (map add-tmdb-tv-data (search-tmdb item "tv"))]
+    )
+
+(defn add-tmdb-data
+  [item]
+  (let [match (find-tmdb-match item)]
+    (merge item match)))
+
+      :tmdb-id
+      :date
+      :tagline
+      :overview
+      :keywords
+      :genres
+      :adult
 
 (defn item->title-txn
   [item]
@@ -151,7 +166,14 @@
      :title/tmdbid (:tmdb-id item)
      :title/format (:format item)
      :title/is3d (:is-3d item)
-     :title/matches (:matches item)}
+     ; todo:
+     :title/date (:date item)
+     :title/tagline (:tagline item)
+     :title/overview (:overview item)
+     :title/keywords (:keywords item)
+     :title/genres (:genres item)
+     :title/adult (:adult item)}
+
     ; Remove nil values
     (filter (fn [[k v]] v))
     ; Add the temp id
@@ -188,7 +210,7 @@
     (map line->item)
     (filter #(:shelf-id %))
     (filter (complement item-imported?))
-    (map add-tmdb-matches)
+    (map add-tmdb-data)
     (save-to-db)))
 
 (defn import-movlist

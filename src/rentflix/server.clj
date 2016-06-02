@@ -6,6 +6,7 @@
             [compojure.handler :refer [api]]
             [compojure.route :refer [not-found]]
             [datomic.api :as d]
+            [rentflix.model :as model]
             [rentflix.db :as db]))
 
 (def base-url "/api/v1")
@@ -19,13 +20,13 @@
   [type req]
   (let [limit (get-in req [:page :limit])
         offset (get-in req [:page :offset])]
-    {:data (db/find-by-type type limit offset)}))
+    {:data (model/find-by-type type limit offset)}))
 
 (defn resource-get
   "Get a single resource given the request object"
   [type req]
   (let [id (Long/parseLong (get-in req [:params :id]))]
-    {:data (db/get-by-id id type)}))
+    {:data (model/get-by-id id type)}))
 
 ; Resources
 
@@ -34,23 +35,11 @@
 
 (argo/defapi v1-model {:resources [title] :base-url model-url})
 
-(defn v1-query
-  "Execute a user-defined query sent via json in the form:
-    {
-        \"query\": \"[:find ... :in ... :where ...]\",
-        \"params\": [\"param1\"]
-    }
-  "
-  [req]
-  (let [data (keywordize-keys (json/read-str (slurp (:body req))))]
-    {:body (json/write-str (d/q (:query data) (db/get-db)))}))
-
 ; Routes
 
 (defroutes api-routes
   (GET model-url [] "This is the api root")
   (GET (str model-url "*") req (v1-model req))
-  (POST query-url req (v1-query req))
   (not-found "Page not found"))
 
 ; Middleware
