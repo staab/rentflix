@@ -20,3 +20,5 @@
 
 (defn boolean? [x]
   (or (true? x) (false? x)))
+
+(defn abs [n] (max n (- n)))

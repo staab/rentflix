@@ -5,7 +5,7 @@
             [datomic.api :as d]
             [rentflix.conf :refer [tmdb-api-key]]
             [rentflix.db :as db]
-            [rentflix.util :refer [in? has-keys? map-values]]))
+            [rentflix.util :refer [in? has-keys? map-values abs]]))
 
 (defn read-lines
   "Reads n-lines of given filename"
@@ -72,7 +72,8 @@
         ultimate-ed #"-UT?LT?I?M?A?T?E? ED\.?"
         year-re #"-?\(?\d{4}\)?$"
         sped-ed #"\(SPED ED\)"
-        xxx #"^XXX:"]
+        xxx #"^XXX:"
+        shelf-id (parse-int (subs line 40 60))]
     {:title (->
               raw-title
               (s/replace special-dvd-re "")
@@ -88,60 +89,93 @@
                (if (re-find dvd-re raw-title) "dvd")
                (if (re-find blu-re raw-title) "bluray"))
      :is-3d (boolean (re-find is-3d-re raw-title))
-     :shelf-id (parse-int (subs line 40 60))
-     :num-copies (read-string (s/trim (subs line 60)))}))
+     :shelf-id shelf-id
+     :num-copies (read-string (s/trim (subs line 60)))
+     :year (get id-to-year shelf-id)}))
 
 (defn item-imported?
   [item]
   (not (empty? (db/find-eids :title/shelfid (:shelf-id item) 1 0))))
 
-(defn q-tmdb
+(defn q-tmdb-uncached
   ([url params]
    ; Avoid getting throttled
    (Thread/sleep 1000)
+   (clojure.pprint/pprint (str "API: getting " url))
    (let [res (client/get
                    (str "https://api.themoviedb.org/3/" url)
                    {:query-params (merge params {"api_key" tmdb-api-key})
                     :headers {:accept :json}})]
-     (get (json/read-str (:body res)) "results")))
-  ([url] (q-tmdb url {})))
+     (json/read-str (:body res))))
+  ([url] (q-tmdb-uncached url {})))
+
+(defonce q-tmdb (memoize q-tmdb-uncached))
 
 (defn search-tmdb
   [item type]
   (let [title (:title item)
-        year (get id-to-year (:shelf-id item))
-        results (q-tmdb (str "search/" type) {"query" title})]
+        results (get (q-tmdb (str "search/" type) {"query" title}) "results")]
     (filter #(has-keys? % ["id", "title" "release_date"]) results)))
 
 (defn add-tmdb-movie-data
   [item]
-  (let [url (str "movie/" (get "id" item))
+  (let [url (str "movie/" (get item "id"))
         movie-data (q-tmdb url)
-        year-data (get "results" (q-tmdb (str url "/release_dates")))
-        keyword-data (get "keywords" (q-tmdb (str url "/keywords")))
+        year-data (get (q-tmdb (str url "/release_dates")) "results")
+        keyword-data (get (q-tmdb (str url "/keywords")) "keywords")
         release-dates (map
-                        #(get "release_date" (first (get "release_dates" %)))
+                        #(get (first (get % "release_dates")) "release_date")
                         year-data)]
     {:tmdb-type "movie"
-     :tmdb-id (get "id" item)
+     :tmdb-id (get item "id")
+     :title (get item "title")
+     :adult (get movie-data "adult")
      :years (map #(parse-int (subs % 0 4)) release-dates)
-     :genres (map #(get "name" %) (get "genres" movie-data))
-     :tagline (get "tagline" movie-data)
-     :overview (get "overview" movie-data)
-     :keywords (map #(get "name" %) keyword-data)}))
+     :genres (map #(get % "name") (get movie-data "genres"))
+     :tagline (get movie-data "tagline")
+     :overview (get movie-data "overview")
+     :keywords (map #(get % "name") keyword-data)}))
 
 (defn add-tmdb-tv-data
   [item]
-  (let [url (str "tv/" (get "id" item))
-        tv (q-tmdb url)]
+  (let [url (str "tv/" (get item "id"))
+        tv-data (q-tmdb url)
+        keyword-data (get (q-tmdb (str url "/keywords")) "keywords")]
     {:tmdb-type "tv"
-     :tmdb-id (get "id" item)}))
+     :tmdb-id (get item "id")
+     :title (get item "title")
+     :adult false
+     :years (map #(parse-int (subs (get % "air_date") 0 4)) (get tv-data "seasons"))
+     :genres (map #(get % "name") (get tv-data "genres"))
+     :overview (get tv-data "overview")
+     :keywords (map #(get % "name") keyword-data)}))
 
 (defn find-tmdb-match
   [item]
   (let [movies (map add-tmdb-movie-data (search-tmdb item "movie"))
-        tv (map add-tmdb-tv-data (search-tmdb item "tv"))]
-    )
+        tv (map add-tmdb-tv-data (search-tmdb item "tv"))
+        sub-year (fn [year]
+                   (abs (- (:year item) year)))
+        add-year-delta (fn [record]
+                         (assoc
+                           record
+                           :year-delta
+                           (apply min (map sub-year (:years record)))))
+        data (map add-year-delta
+                  (filter #(> (count (:years %)) 0)
+                          (concat movies tv)))
+        matches (reduce
+                 (fn [[min-delta matches] record]
+                   (let [record-delta (:year-delta record)
+                         matches (if
+                                   (<= record-delta min-delta)
+                                   (conj matches record)
+                                   matches)
+                         min-delta (min min-delta record-delta)]
+                     [min-delta matches]))
+                 [100 []]
+                 data)]
+    (first (second matches))))
 
 (defn add-tmdb-data
   [item]
